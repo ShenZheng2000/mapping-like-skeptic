@@ -39,7 +39,8 @@ num_gpus = 4
 batch_size = 4
 num_iters_per_epoch = 29293 // (num_gpus * batch_size)
 num_epochs = 20
-num_epochs_interval = num_epochs // 6  # num_epochs // 8
+# num_epochs_interval = num_epochs // 6  # num_epochs // 8
+num_epochs_interval = max(1, num_epochs // 6) # NOTE: use this to avoid 0 interval
 total_iters = num_epochs * num_iters_per_epoch
 num_queries = 100
 
@@ -396,7 +397,8 @@ data = dict(
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
-        pipeline=test_pipeline,
+        # pipeline=test_pipeline,
+        pipeline=train_pipeline,
         seq_split_num=-2,
         matching=True,
         multi_frame=5,
@@ -459,7 +461,8 @@ lr_config = dict(
     min_lr_ratio=3e-3)
 
 
-evaluation = dict(interval=num_iters_per_epoch*10000, process_period=None)
+# evaluation = dict(interval=num_iters_per_epoch*10000, process_period=None)
+evaluation = dict(interval=num_epochs_interval*num_iters_per_epoch, process_period=None) # NOTE: increase eval interval for faster debugging
 find_unused_parameters = True  #### when use checkpoint, find_unused_parameters must be False
 checkpoint_config = dict(interval=num_iters_per_epoch)
 

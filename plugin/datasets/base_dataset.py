@@ -320,38 +320,40 @@ class BaseMapDataset(Dataset):
         if eval_semantic:
             return overal_result
 
-        results["overal"] = overal_result
+        return overal_result
 
-        if kwargs["process_period"] is not None and kwargs["process_period"] != 1:
-            process_period = kwargs["process_period"]
-            for i in range(process_period):
-                print(f"Start processing for process period: {i+1}/{process_period}")
-                results[f"time_{i}_outOf_{process_period}"] = \
-                    self._evaluate_wrt_time(result_path, (i, process_period), logger=logger, eval_semantic=eval_semantic, kwargs=kwargs)
+        # results["overal"] = overal_result
 
-        return results
+        # if kwargs["process_period"] is not None and kwargs["process_period"] != 1:
+        #     process_period = kwargs["process_period"]
+        #     for i in range(process_period):
+        #         print(f"Start processing for process period: {i+1}/{process_period}")
+        #         results[f"time_{i}_outOf_{process_period}"] = \
+        #             self._evaluate_wrt_time(result_path, (i, process_period), logger=logger, eval_semantic=eval_semantic, kwargs=kwargs)
 
-    def evaluate_wrt_time(self, result_path, process_period, logger=None, eval_semantic=False, kwargs=None):
-        results = dict()
-        for i in range(process_period):
-            print(f"Start processing for process period: {i+1}/{process_period}")
-            results[f"time_{i}_outOf_{process_period}"] = \
-                self._evaluate_wrt_time(result_path, (i, process_period), logger=logger, eval_semantic=eval_semantic, kwargs=kwargs)
+        # return results
 
-        return results
+    # def evaluate_wrt_time(self, result_path, process_period, logger=None, eval_semantic=False, kwargs=None):
+    #     results = dict()
+    #     for i in range(process_period):
+    #         print(f"Start processing for process period: {i+1}/{process_period}")
+    #         results[f"time_{i}_outOf_{process_period}"] = \
+    #             self._evaluate_wrt_time(result_path, (i, process_period), logger=logger, eval_semantic=eval_semantic, kwargs=kwargs)
 
-    def _evaluate_wrt_time(self, result_path, eval__idx_period=None, logger=None, eval_semantic=False, kwargs=None):
-        assert eval__idx_period[1] > 1
-        tmp_gts_path = None
-        if kwargs is not None:
-            if "tmp_gts_path" in kwargs.keys():
-                tmp_gts_path = kwargs["tmp_gts_path"]
-        if not eval_semantic:
-            self.evaluator = VectorEvaluate(self.eval_config, tmp_gts_path=tmp_gts_path)
-        else:
-            self.evaluator = RasterEvaluate(self.eval_config)
-        result_dict = self.evaluator.periodic_evaluate(result_path, time_idx=eval__idx_period[0], period=eval__idx_period[1], logger=logger)
-        return result_dict
+    #     return results
+
+    # def _evaluate_wrt_time(self, result_path, eval__idx_period=None, logger=None, eval_semantic=False, kwargs=None):
+    #     assert eval__idx_period[1] > 1
+    #     tmp_gts_path = None
+    #     if kwargs is not None:
+    #         if "tmp_gts_path" in kwargs.keys():
+    #             tmp_gts_path = kwargs["tmp_gts_path"]
+    #     if not eval_semantic:
+    #         self.evaluator = VectorEvaluate(self.eval_config, tmp_gts_path=tmp_gts_path)
+    #     else:
+    #         self.evaluator = RasterEvaluate(self.eval_config)
+    #     result_dict = self.evaluator.periodic_evaluate(result_path, time_idx=eval__idx_period[0], period=eval__idx_period[1], logger=logger)
+    #     return result_dict
 
     def _evaluate(self, result_path, logger=None, eval_semantic=False, kwargs=None):
         tmp_gts_path = None
