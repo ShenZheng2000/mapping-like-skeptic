@@ -4,6 +4,7 @@ from os import path as osp
 from pyquaternion import Quaternion
 import argparse
 from nusc_split import TRAIN_SCENES, VAL_SCENES
+from nusc_geosplit import GEO_TRAIN_SCENES, GEO_VAL_SCENES
 
 nus_categories = ('car', 'truck', 'trailer', 'bus', 'construction_vehicle',
                   'bicycle', 'motorcycle', 'pedestrian', 'traffic_cone',
@@ -26,6 +27,9 @@ def parse_args():
         '--newsplit',
         action='store_true')
     parser.add_argument(
+        '--geosplit',
+        action='store_true')
+    parser.add_argument(
         '-v','--version',
         choices=['v1.0-mini', 'v1.0-trainval', 'v1.0-test'],
         default='v1.0-trainval')
@@ -37,7 +41,8 @@ def create_nuscenes_infos_map(root_path,
                             dest_path=None,
                             info_prefix='nuscenes',
                             version='v1.0-trainval',
-                            new_split=False):
+                            new_split=False,
+                            geosplit=False):
     """Create info file for map learning task on nuscene dataset.
 
     Given the raw data, generate its related info file in pkl format.
@@ -65,6 +70,10 @@ def create_nuscenes_infos_map(root_path,
     if new_split:
         train_scenes = TRAIN_SCENES
         val_scenes = VAL_SCENES
+
+    if geosplit:
+        train_scenes = GEO_TRAIN_SCENES
+        val_scenes = GEO_VAL_SCENES
 
     test = 'test' in version
     if test:
@@ -193,4 +202,4 @@ def create_nuscenes_infos_map(root_path,
 if __name__ == '__main__':
     args = parse_args()
 
-    create_nuscenes_infos_map(root_path=args.data_root, version=args.version, new_split=args.newsplit)
+    create_nuscenes_infos_map(root_path=args.data_root, version=args.version, new_split=args.newsplit, geosplit=args.geosplit)

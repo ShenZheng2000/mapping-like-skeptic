@@ -48,7 +48,7 @@ class AV2Dataset(BaseMapDataset):
         self.id2map = ann['id2map']
         samples = ann['samples']
 
-        if 'newsplit' not in ann_file:
+        if ('newsplit' not in ann_file) and ('geosplit' not in ann_file) and ('mapchange' not in ann_file):
             if 'val' in ann_file:
                 # For the old split testing, we make sure that the test set matches exactly with the MapTR codebase
                 # NOTE: simply sort&sampling will produce slightly different results compared to MapTR's samples
