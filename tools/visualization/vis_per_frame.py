@@ -160,6 +160,11 @@ def vis_pred_data(scene_name, args, pred_results, origin,roi_size):
     # iterate through each frame of the pred sequence
     for index in index_list:
         vectors = np.array(pred_results[index]["vectors"]).reshape((len(np.array(pred_results[index]["vectors"])), 20, 2))
+        
+        # NOTE: add this to skip empty results. 
+        if len(vectors) == 0:
+            continue
+        
         # some results are normalized, some not...
         if np.abs(vectors).max() <= 1: 
             vectors = vectors * roi_size + origin

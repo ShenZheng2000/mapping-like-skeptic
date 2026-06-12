@@ -561,6 +561,10 @@ def iou_merge_boundry(merged_lines, vec, thickness=1):
             line_geom1 = LineString(pre_line)
             line1_dists = np.array([line_geom1.project(Point(x)) for x in pre_line])
             split_mask = line1_dists > line_geom1.length / 2
+
+            if (~split_mask).sum() < 2 or split_mask.sum() < 2:
+                return merged_lines
+
             split_1 = LineString(pre_line[~split_mask])
             split_2 = LineString(pre_line[split_mask])
 
@@ -1203,6 +1207,10 @@ def vis_pred_data(scene_name="", pred_results=None, origin=None, roi_size=None, 
     for index in index_list:
         
         vectors = np.array(pred_results[index]["vectors"]).reshape((len(np.array(pred_results[index]["vectors"])), 20, 2))
+        
+        if len(vectors) == 0:
+            continue
+        
         if abs(vectors.max()) <= 1:
             curr_vectors = vectors * roi_size + origin
         else:
@@ -1421,23 +1429,23 @@ def main():
     if interested_scenes is not None and len(interested_scenes) > 0:
         print("Found interested scenes, visualizing them only...")
     for scene_name in all_scene_names:
-        if scene_name in interested_scenes:
-            if args.scene_id is not None and scene_name not in args.scene_id:
-                continue
-            scene_dir = os.path.join(args.out_dir,scene_name)
-            if os.path.exists(scene_dir) and len(os.listdir(scene_dir)) > 0 and not args.overwrite:
-                print(f"Scene {scene_name} already generated, skipping...")
-                continue
-            os.makedirs(scene_dir,exist_ok=True)
+        # if scene_name in interested_scenes:
+        if args.scene_id is not None and scene_name not in args.scene_id:
+            continue
+        scene_dir = os.path.join(args.out_dir,scene_name)
+        if os.path.exists(scene_dir) and len(os.listdir(scene_dir)) > 0 and not args.overwrite:
+            print(f"Scene {scene_name} already generated, skipping...")
+            continue
+        os.makedirs(scene_dir,exist_ok=True)
 
-            if args.option == "vis-gt":
-                # visualize the GT data
-                vis_gt_data(scene_name=scene_name, args=args, dataset=dataset, gt_data=data, origin=origin, roi_size=roi_size)
-            elif args.option == "vis-pred":
-                # visualize the prediction results
-                vis_pred_data(scene_name=scene_name, pred_results=data, origin=origin, roi_size=roi_size, args=args)
-            else:
-                raise ValueError('Invalid visualization option {}'.format(args.option))
+        if args.option == "vis-gt":
+            # visualize the GT data
+            vis_gt_data(scene_name=scene_name, args=args, dataset=dataset, gt_data=data, origin=origin, roi_size=roi_size)
+        elif args.option == "vis-pred":
+            # visualize the prediction results
+            vis_pred_data(scene_name=scene_name, pred_results=data, origin=origin, roi_size=roi_size, args=args)
+        else:
+            raise ValueError('Invalid visualization option {}'.format(args.option))
 
 
 if __name__ == '__main__':
