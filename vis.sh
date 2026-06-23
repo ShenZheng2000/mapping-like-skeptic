@@ -22,15 +22,15 @@
 #     --option vis-pred  \
 #     --per_frame_result 1
 
-python tools/tracking/prepare_gt_tracks.py \
-  plugin/configs/skeptic/av2_newsplit/stage3.py  \
-  --out-dir tracking_gts/av2
+# python tools/tracking/prepare_gt_tracks.py \
+#   plugin/configs/skeptic/av2_newsplit/stage3.py  \
+#   --out-dir tracking_gts/av2
 
 
 # Argoverse 2 geosplit (GT, vis_global)
 python tools/visualization/vis_global.py \
     plugin/configs/skeptic/av2_newsplit/stage3.py \
-    --data_path datasets/argoverse2_geosplit/av2_map_infos_val.pkl \
+    --data_path datasets/argoverse2_geosplit/av2_map_infos_val_gt_tracks.pkl \
     --out_dir vis_global/argoverse2_geosplit/gt  \
     --option vis-gt \
     --per_frame_result 0
