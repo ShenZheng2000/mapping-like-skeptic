@@ -3,8 +3,8 @@ _base_ = [
 ]
 
 # overwrite PKL paths everywhere
-new_val_pkl = 'datasets/argoverse2_geosplit/av2_map_infos_val.pkl'
-new_train_pkl = 'datasets/argoverse2_geosplit/av2_map_infos_train.pkl'
+new_val_pkl = 'datasets/argoverse2_geosplit/av2_map_infos_val_100x50.pkl'
+new_train_pkl = 'datasets/argoverse2_geosplit/av2_map_infos_train_100x50.pkl'
 
 # dataset overrides for geo-split
 data = dict(
