@@ -20,6 +20,12 @@ python tools/visualization/vis_global.py \
     --option vis-pred \
     --per_frame_result 0
 
+python tools/visualization/vis_per_frame.py \
+    plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune.py \
+    --data_path $DIR/pos_predictions_5.pkl \
+    --out_dir $DIR/vis_local \
+    --option vis-pred
+
 
 
 # MapTRv2 visualization on argoverse 2 (json -> pkl)
@@ -39,3 +45,9 @@ python tools/visualization/vis_global.py \
     --out_dir $DIR/vis_global \
     --option vis-pred \
     --per_frame_result 0
+
+python tools/visualization/vis_per_frame.py \
+    plugin/configs/skeptic/av2_newsplit/stage3.py \
+    --data_path $DIR/pos_predictions_5.pkl \
+    --out_dir $DIR/vis_local \
+    --option vis-pred

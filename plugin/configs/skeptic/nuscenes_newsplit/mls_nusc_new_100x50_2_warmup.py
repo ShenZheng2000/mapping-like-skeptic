@@ -2,6 +2,11 @@ _base_ = [
     '../../_base_/default_runtime.py'
 ]
 
+# overwrite PKL paths everywhere
+data_root = '/scratch/shenzhen/Datasets/nuscenes'
+new_val_pkl = '/scratch/shenzhen/Datasets/nuscenes/nuscenes_map_infos_val_100x50.pkl'
+new_train_pkl = '/scratch/shenzhen/Datasets/nuscenes/nuscenes_map_infos_train_100x50.pkl'
+
 workers_per_gpu = 8
 
 distributed = True
@@ -29,8 +34,10 @@ img_h = 480
 img_w = 800
 img_size = (img_h, img_w)
 
-num_gpus = 4
+# num_gpus = 4
 batch_size = 6
+num_gpus = 8
+
 num_iters_per_epoch = 27846 // (num_gpus * batch_size)
 num_epochs = 6
 num_epochs_interval = num_epochs // 6  # num_epochs // 8
@@ -334,8 +341,8 @@ test_pipeline = [
 # DO NOT CHANGE
 eval_config = dict(
     type='NuscDataset',
-    data_root='./datasets/nuscenes',
-    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    data_root=data_root,
+    ann_file=new_val_pkl,
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -357,8 +364,8 @@ eval_config = dict(
 
 match_config = dict(
     type='NuscDataset',
-    data_root='./datasets/nuscenes',
-    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    data_root=data_root,
+    ann_file=new_val_pkl,
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -391,8 +398,8 @@ data = dict(
     workers_per_gpu=workers_per_gpu,
     train=dict(
         type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
+        data_root=data_root,
+        ann_file=new_train_pkl,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -404,8 +411,8 @@ data = dict(
     ),
     val=dict(
         type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        data_root=data_root,
+        ann_file=new_val_pkl,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -416,8 +423,8 @@ data = dict(
     ),
     test=dict(
         type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        data_root=data_root,
+        ann_file=new_val_pkl,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,

@@ -2,6 +2,11 @@ _base_ = [
     '../../_base_/default_runtime.py'
 ]
 
+# overwrite PKL paths everywhere
+data_root = '/scratch/shenzhen/Datasets/nuscenes'
+new_val_pkl = '/scratch/shenzhen/Datasets/nuscenes/nuscenes_map_infos_val_100x50.pkl'
+new_train_pkl = '/scratch/shenzhen/Datasets/nuscenes/nuscenes_map_infos_train_100x50.pkl'
+
 workers_per_gpu = 8
 
 distributed = True
@@ -20,7 +25,7 @@ plugin = True
 
 # plugin code dir
 plugin_dir = 'plugin/'
-[]
+
 # img configs
 img_norm_cfg = dict(
     mean=[103.530, 116.280, 123.675], std=[1.0, 1.0, 1.0], to_rgb=False)
@@ -30,8 +35,11 @@ img_h = 480
 img_w = 800
 img_size = (img_h, img_w)
 
-num_gpus = 4
-batch_size = 2
+# num_gpus = 4
+# batch_size = 2
+num_gpus = 8
+batch_size = 1
+
 num_iters_per_epoch = 27846 // (num_gpus * batch_size)
 num_epochs = 18
 num_epochs_interval = num_epochs // 6  # num_epochs // 8
@@ -127,7 +135,7 @@ model = dict(
             type="MultiHistorySimpleCNNPredictor",
             perspective2bev_converter=dict(
                 type="FocusedPerspective2BEVConverter",
-                perspective_spatial_res=(perspective_grids[1], perspective_grids[0]),  # (60, 100)
+                perspective_spatial_res=(perspective_grids[1], perspective_grids[0]),  # (100, 100)
                 num_feature_levels=3,  # max 3, min 1, for resnet features
                 roi_y=roi_size[1],
                 num_height_levels=num_height_levels,
@@ -335,8 +343,8 @@ test_pipeline = [
 # DO NOT CHANGE
 eval_config = dict(
     type='NuscDataset',
-    data_root='./datasets/nuscenes',
-    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    data_root=data_root,
+    ann_file=new_val_pkl,
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -349,7 +357,7 @@ eval_config = dict(
             roi_size=roi_size
         ),
         dict(
-            type='RasterizeMap',  
+            type='RasterizeMap',
             roi_size=roi_size,
             coords_dim=coords_dim,
             canvas_size=canvas_size,
@@ -358,7 +366,7 @@ eval_config = dict(
         ),
         dict(type='FormatBundleMap'),
         dict(type='Collect3D', keys=['vectors', 'semantic_mask'], meta_keys=['token', 'ego2img', 'ego2cam', 'sample_idx', 'ego2global_translation',
-        'ego2global_rotation', 'img_shape', 'scene_name', 'img_filenames', 'cam_intrinsics', 'cam_extrinsics', 'lidar2ego_translation', 
+        'ego2global_rotation', 'img_shape', 'scene_name', 'img_filenames', 'cam_intrinsics', 'cam_extrinsics', 'lidar2ego_translation',
         'lidar2ego_rotation'])
     ],
     interval=1,
@@ -367,8 +375,8 @@ eval_config = dict(
 
 match_config = dict(
     type='NuscDataset',
-    data_root='./datasets/nuscenes',
-    ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+    data_root=data_root,
+    ann_file=new_val_pkl,
     meta=meta,
     roi_size=roi_size,
     cat2id=cat2id,
@@ -401,8 +409,8 @@ data = dict(
     workers_per_gpu=workers_per_gpu,
     train=dict(
         type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_train_newsplit.pkl',
+        data_root=data_root,
+        ann_file=new_train_pkl,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -414,8 +422,8 @@ data = dict(
     ),
     val=dict(
         type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        data_root=data_root,
+        ann_file=new_val_pkl,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -427,8 +435,8 @@ data = dict(
     ),
     test=dict(
         type='NuscDataset',
-        data_root='./datasets/nuscenes',
-        ann_file='./datasets/nuscenes/nuscenes_map_infos_val_newsplit.pkl',
+        data_root=data_root,
+        ann_file=new_val_pkl,
         meta=meta,
         roi_size=roi_size,
         cat2id=cat2id,
@@ -451,11 +459,11 @@ optimizer = dict(
             'img_backbone': dict(lr_mult=0.1),
         }),
     weight_decay=1e-2)
-    
+
 optimizer_config = dict(
-    type='GradientCumulativeOptimizerHook', 
+    type='GradientCumulativeOptimizerHook',
     cumulative_iters=2,  # Accumulate gradients over 2 iterations
-    grad_clip=dict(max_norm=35, norm_type=2) 
+    grad_clip=dict(max_norm=35, norm_type=2)
 )
 
 # learning policy & schedule
