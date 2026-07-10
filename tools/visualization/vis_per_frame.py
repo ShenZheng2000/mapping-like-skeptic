@@ -62,7 +62,13 @@ def parse_args():
         type=int,
         help='whether to merge boundary lines'
     )
-    
+    parser.add_argument(
+        '--orientation',
+        default='lr',
+        choices=['lr', 'bt'],
+        help='lr: ego drives left->right (default); bt: ego drives bottom->top'
+    )
+
     args = parser.parse_args()
 
     return args
@@ -82,16 +88,25 @@ def save_as_video(image_list, mp4_output_path, scale=None):
         imageio.mimsave(mp4_output_path, resized_images,  format='MP4',fps=10)
     print("mp4 saved to : ", mp4_output_path)
 
-def plot_one_frame_results(vectors, id_info, roi_size, scene_dir, args):                
-    # setup the figure with car
-    plt.figure(figsize=(roi_size[0], roi_size[1]))
-    plt.xlim(-roi_size[0] / 2, roi_size[0] / 2)
-    plt.ylim(-roi_size[1] / 2, roi_size[1] / 2)
+def plot_one_frame_results(vectors, id_info, roi_size, scene_dir, args):
+    bt = getattr(args, 'orientation', 'lr') == 'bt'
+
+    # bt: ego-x (forward) → vertical, ego-y (lateral) → horizontal
+    fig_w = roi_size[1] if bt else roi_size[0]
+    fig_h = roi_size[0] if bt else roi_size[1]
+
+    plt.figure(figsize=(fig_w, fig_h))
+    plt.xlim(-fig_w / 2, fig_w / 2)
+    plt.ylim(-fig_h / 2, fig_h / 2)
     plt.axis('off')
     plt.autoscale(False)
     car_img = Image.open('resources/car-orange.png')
-    plt.imshow(car_img, extent=[-2.2, 2.2, -2, 2])
-    
+    if bt:
+        car_img = car_img.rotate(90)  # face upward
+        plt.imshow(car_img, extent=[-2, 2, -2.2, 2.2])
+    else:
+        plt.imshow(car_img, extent=[-2.2, 2.2, -2, 2])
+
     for label, vecs in vectors.items():
         if label == 0: # ped_crossing
             color = 'b'
@@ -102,29 +117,33 @@ def plot_one_frame_results(vectors, id_info, roi_size, scene_dir, args):
         elif label == 2: # boundary
             color = 'g'
             label_text = 'B'
-        
+
         if len(vecs) == 0:
             continue
 
         for vec_idx, vec in enumerate(vecs):
             pts = vec[:, :2]
-            x = np.array([pt[0] for pt in pts])
-            y = np.array([pt[1] for pt in pts])
+            if bt:
+                x = np.array([pt[1] for pt in pts])  # ego-y → horizontal
+                y = np.array([pt[0] for pt in pts])  # ego-x (forward) → vertical
+            else:
+                x = np.array([pt[0] for pt in pts])
+                y = np.array([pt[1] for pt in pts])
             plt.plot(x, y, 'o-', color=color, linewidth=25, markersize=20, alpha=args.line_opacity)
             vec_id = id_info[label][vec_idx]
             mid_idx = len(x) // 2
 
             # Put instance id, prevent the text from changing fig size...
-            if -roi_size[1]/2 <= y[mid_idx] < -roi_size[1]/2 + 2:
+            if -fig_h/2 <= y[mid_idx] < -fig_h/2 + 2:
                 text_y = y[mid_idx] + 2
-            elif roi_size[1]/2 - 2 < y[mid_idx] <= roi_size[1]/2:
+            elif fig_h/2 - 2 < y[mid_idx] <= fig_h/2:
                 text_y = y[mid_idx] - 2
             else:
                 text_y = y[mid_idx]
-            
-            if -roi_size[0]/2 <= x[mid_idx] < -roi_size[0]/2 + 4:
+
+            if -fig_w/2 <= x[mid_idx] < -fig_w/2 + 4:
                 text_x = x[mid_idx] + 4
-            elif roi_size[0]/2 - 4 < x[mid_idx] <= roi_size[0]/2:
+            elif fig_w/2 - 4 < x[mid_idx] <= fig_w/2:
                 text_x = x[mid_idx] - 4
             else:
                 text_x = x[mid_idx]
@@ -278,6 +297,9 @@ def main():
     scene_info_list = []
     for single_scene_name in all_scene_names:
         scene_info_list.append((single_scene_name, args))
+
+    if args.orientation != 'lr':
+        args.out_dir = args.out_dir.rstrip('/') + f'_{args.orientation}'
 
     roi_size = torch.tensor(cfg.roi_size).numpy()
     origin = torch.tensor(cfg.pc_range[:2]).numpy()
