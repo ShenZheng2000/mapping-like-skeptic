@@ -1,8 +1,5 @@
 """
-Print per-frame Qwen3-VL scene descriptions for ONE scene folder using BEV map only.
-
-Input: a single scene folder containing per_frame_gt.mp4 or per_frame_pred.mp4, e.g.
-  /data3/.../vis_local/nuscenes_geosplit/gt/scene-0002
+Print per-frame Qwen3-VL scene descriptions for scene folder(s) using BEV map only.
 
 For each frame the BEV image is sent to Qwen3-VL, which returns exactly two sentences:
   1. Map elements present (lane dividers, pedestrian crossings, drivable area boundary).
@@ -19,41 +16,59 @@ For each frame the BEV image is sent to Qwen3-VL, which returns exactly two sent
 
 Usage
 -----
+# single scene with "scene_dir", first 3 frames
 python vis_scene_description_2.py \
-    --scene_dir vis_local/nuscenes_geosplit/gt/scene-0002 \
-    --first_frames 2
+    --scene_dir vis_local/nuscenes_geosplit/skeptic/bt_boxes/scene-0002 \
+    --first_frames 3
+
+# single scene with "scene_dir", all frames
+python vis_scene_description_2.py \
+    --scene_dir vis_local/nuscenes_geosplit/skeptic/bt_boxes/scene-0002
+
+# all scenes with "scenes_dir"
+python vis_scene_description_2.py \
+    --scenes_dir vis_local/nuscenes_geosplit/skeptic/bt_boxes
 """
 
-import os, glob, argparse
+import os, glob, argparse, json
 import imageio.v2 as imageio
+import numpy as np
 from PIL import Image
 import torch
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
-# TODO: add dynamic objects from gt bboxes, and regenerate video frames. 
-# TODO: refine system and user instructions. 
 SYSTEM = ("You are an autonomous driving planner. "
-          "You receive a top-down BEV map of the area around an ego vehicle. "
-          "In the BEV, the orange car at center is the ego vehicle; "
-          "green 'B' lines are drivable area boundaries, red 'D' lines are lane dividers, "
-          "blue 'P' lines are pedestrian crossings. "
-          "Coordinates are meters relative to ego (forward=+x, left=+y).")
+          "You receive a top-down BEV image centered on the ego vehicle. "
+          "The ego vehicle is driving toward the top of the image.\n"
+          "Map elements: "
+              "green 'B' lines are drivable area boundaries, "
+              "red 'D' lines are lane dividers, "
+              "blue 'P' lines are pedestrian crossings.\n"
+          "Dynamic objects: "
+              "the orange car icon at center is the ego vehicle; "
+              "orange filled boxes are other vehicles, "
+              "cyan filled boxes are pedestrians, "
+              "gray filled boxes are obstacles.")
 
 USER = ("Respond in exactly two sentences. "
-        "Sentence 1: describe the map elements visible in the BEV — include lane dividers, "
-        "pedestrian crossings, and drivable area boundaries with their approximate positions. "
+        "Sentence 1: describe the scene — include map elements (lane dividers, pedestrian "
+        "crossings, drivable area boundaries) and any dynamic objects (vehicles, pedestrians, "
+        "obstacles) with their approximate positions relative to the ego vehicle. "
         "Sentence 2: give a single concrete planning instruction for the ego vehicle based "
-        "solely on those map elements.")
+        "on both the map layout and the dynamic objects present.")
 
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--scene_dir", required=True,
-                   help="folder with per_frame_*.mp4 (BEV)")
+    grp = p.add_mutually_exclusive_group(required=True)
+    grp.add_argument("--scene_dir",
+                     help="single scene folder with per_frame_*.mp4")
+    grp.add_argument("--scenes_dir",
+                     help="parent folder; all immediate subdirs are treated as scenes")
     p.add_argument("--model", default="Qwen/Qwen3-VL-8B-Instruct")
     p.add_argument("--bev_scale", default=1.0, type=float)
     p.add_argument("--first_frames", default=None, type=int,
-                   help="process only the first N frames (default: all)")
+                   help="process only the first N frames per scene (default: all)")
     return p.parse_args()
 
 
@@ -72,6 +87,20 @@ def read_all_frames(path, scale, max_frames=None):
     return frames
 
 
+def is_blank_frame(img, white_thresh=250, black_thresh=5):
+    arr = np.array(img)
+    mean = arr.mean()
+    return mean >= white_thresh or mean <= black_thresh
+
+
+def split_description(desc):
+    parts = desc.split(". ", 1)
+    if len(parts) == 2:
+        return parts[0].rstrip(".") + ".", parts[1]
+    print(f"  [WARN] could not split into two sentences: {desc!r}")
+    return desc, None
+
+
 def find_bev_mp4(scene_dir):
     for name in ("per_frame_gt.mp4", "per_frame_pred.mp4"):
         p = os.path.join(scene_dir, name)
@@ -81,22 +110,22 @@ def find_bev_mp4(scene_dir):
     return hits[0] if hits else None
 
 
-def main():
-    args = parse_args()
-
-    model = AutoModelForImageTextToText.from_pretrained(
-        args.model, dtype="auto", device_map="auto")
-    processor = AutoProcessor.from_pretrained(args.model)
-
-    bev_mp4 = find_bev_mp4(args.scene_dir)
+def process_scene(scene_dir, model, processor, args):
+    bev_mp4 = find_bev_mp4(scene_dir)
     if bev_mp4 is None:
-        raise FileNotFoundError(f"No per_frame_*.mp4 in {args.scene_dir}")
-    bev_frames = read_all_frames(bev_mp4, args.bev_scale, args.first_frames)
+        print(f"[SKIP] no per_frame_*.mp4 in {scene_dir}\n")
+        return
 
-    print(f"Scene: {args.scene_dir}")
+    bev_frames = read_all_frames(bev_mp4, args.bev_scale, args.first_frames)
+    print(f"Scene: {scene_dir}")
     print(f"BEV:   {os.path.basename(bev_mp4)} ({len(bev_frames)} frames)\n")
 
+    results = []
     for fi, bev_frame in enumerate(bev_frames):
+        if is_blank_frame(bev_frame):
+            print(f"===== Frame {fi} [SKIPPED: blank] =====\n")
+            continue
+
         messages = [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": [
@@ -112,9 +141,41 @@ def main():
         trimmed = out[0][inputs["input_ids"].shape[1]:]
         desc = processor.decode(trimmed, skip_special_tokens=True).strip()
 
+        scene_desc, planning = split_description(desc)
+        results.append({
+            "frame_idx": fi,
+            "scene_description": scene_desc,
+            "planning_instruction": planning,
+        })
+
         print(f"===== Frame {fi} =====")
         print(desc)
         print()
+
+    out_path = os.path.join(scene_dir, "scene_descriptions.json")
+    with open(out_path, "w") as f:
+        json.dump({"model": args.model, "frames": results}, f, indent=2)
+    print(f"Saved {len(results)} frames -> {out_path}\n")
+
+
+def main():
+    args = parse_args()
+
+    model = AutoModelForImageTextToText.from_pretrained(
+        args.model, dtype="auto", device_map="auto")
+    processor = AutoProcessor.from_pretrained(args.model)
+
+    if args.scene_dir:
+        scene_dirs = [args.scene_dir]
+    else:
+        scene_dirs = sorted(
+            d for d in glob.glob(os.path.join(args.scenes_dir, "*"))
+            if os.path.isdir(d)
+        )
+        print(f"Found {len(scene_dirs)} scenes in {args.scenes_dir}\n")
+
+    for scene_dir in scene_dirs:
+        process_scene(scene_dir, model, processor, args)
 
 
 if __name__ == "__main__":
