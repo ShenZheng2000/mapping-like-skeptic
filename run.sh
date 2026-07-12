@@ -18,7 +18,7 @@ ulimit -n 65536
 # Maybe: also need to prepare different tracking files for 100m x 50m, if error occurs during training. 
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_100x50.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_100x50.py 4
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50.py 4
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50.py 4
 
 # train (mobilenetv3 backbone)
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_mobilenetv3.py 4

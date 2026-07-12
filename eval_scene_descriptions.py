@@ -149,7 +149,7 @@ def main():
             if m is None:
                 print(f"{label:<20}" + "".join(f"{'N/A':>{col_w}}" for _ in header_metrics))
             else:
-                print(f"{label:<20}" + "".join(f"{m[k]:>{col_w}.4f}" for k in header_metrics))
+                print(f"{label:<20}" + "".join(f"{m[k]*100:>{col_w}.2f}" for k in header_metrics))
         print(sep)
 
 

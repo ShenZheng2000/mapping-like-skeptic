@@ -16,18 +16,18 @@ For each frame the BEV image is sent to Qwen3-VL, which returns exactly two sent
 
 Usage
 -----
-# single scene with "scene_dir", first 3 frames
+# single scene, first 3 frames
 python vis_scene_description_2.py \
-    --scene_dir vis_local/nuscenes_geosplit/skeptic/bt_boxes/scene-0002 \
+    --one_scene vis_local/nuscenes_geosplit/skeptic/bt_boxes/scene-0002 \
     --first_frames 3
 
-# single scene with "scene_dir", all frames
+# single scene, all frames
 python vis_scene_description_2.py \
-    --scene_dir vis_local/nuscenes_geosplit/skeptic/bt_boxes/scene-0002
+    --one_scene vis_local/nuscenes_geosplit/skeptic/bt_boxes/scene-0002
 
-# all scenes with "scenes_dir"
+# all scenes
 python vis_scene_description_2.py \
-    --scenes_dir vis_local/nuscenes_geosplit/skeptic/bt_boxes
+    --all_scenes vis_local/nuscenes_geosplit/skeptic/bt_boxes
 """
 
 import os, glob, argparse, json
@@ -61,9 +61,9 @@ USER = ("Respond in exactly two sentences. "
 def parse_args():
     p = argparse.ArgumentParser()
     grp = p.add_mutually_exclusive_group(required=True)
-    grp.add_argument("--scene_dir",
+    grp.add_argument("--one_scene",
                      help="single scene folder with per_frame_*.mp4")
-    grp.add_argument("--scenes_dir",
+    grp.add_argument("--all_scenes",
                      help="parent folder; all immediate subdirs are treated as scenes")
     p.add_argument("--model", default="Qwen/Qwen3-VL-8B-Instruct")
     p.add_argument("--bev_scale", default=1.0, type=float)
@@ -165,14 +165,14 @@ def main():
         args.model, dtype="auto", device_map="auto")
     processor = AutoProcessor.from_pretrained(args.model)
 
-    if args.scene_dir:
-        scene_dirs = [args.scene_dir]
+    if args.one_scene:
+        scene_dirs = [args.one_scene]
     else:
         scene_dirs = sorted(
-            d for d in glob.glob(os.path.join(args.scenes_dir, "*"))
+            d for d in glob.glob(os.path.join(args.all_scenes, "*"))
             if os.path.isdir(d)
         )
-        print(f"Found {len(scene_dirs)} scenes in {args.scenes_dir}\n")
+        print(f"Found {len(scene_dirs)} scenes in {args.all_scenes}\n")
 
     for scene_dir in scene_dirs:
         process_scene(scene_dir, model, processor, args)

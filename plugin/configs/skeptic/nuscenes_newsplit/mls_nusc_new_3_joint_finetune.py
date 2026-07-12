@@ -483,7 +483,7 @@ lr_config = dict(
 
 evaluation = dict(interval=num_iters_per_epoch*10000, process_period=None)
 find_unused_parameters = True  #### when use checkpoint, find_unused_parameters must be False
-checkpoint_config = dict(interval=num_iters_per_epoch)
+checkpoint_config = dict(interval=num_iters_per_epoch * 4)
 
 runner = dict(
     type='MyRunnerWrapper', max_iters=num_epochs * num_iters_per_epoch)
