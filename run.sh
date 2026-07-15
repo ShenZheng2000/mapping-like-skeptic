@@ -29,10 +29,9 @@ ulimit -n 65536
 
 
 # bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv3.py    \
-#   work_dirs/stage3_mobilenetv3/latest.pth  \
+#   plugin/configs/skeptic/av2_newsplit/stage3_100x50.py    \
+#   work_dirs/stage3_100x50/latest.pth  \
 #   4 --eval
-
 
 
 ############################# nuScenes Experiments #############################
@@ -65,8 +64,18 @@ ulimit -n 65536
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_2_warmup_mobilenetv3.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_3_joint_finetune_mobilenetv3.py 8
 
+# train (w/ centerline)
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_1_bev_pretrain_w_centerline.py 8
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_w_centerline.py 8
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_w_centerline.py 8
 
-# bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3.py    \
-#   work_dirs/mls_nusc_new_3_joint_finetune_mobilenetv3/latest.pth  \
-#   8  --eval
+# train (mobilenetv3 backbone, w/ centerline)
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_1_bev_pretrain_mobilenetv3_w_centerline.py 8
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_mobilenetv3_w_centerline.py 8
+bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py 8
+
+# NOTE: once any stage2 done, first run to debug, and record numbers? 
+bash tools/dist_test.sh  \
+  plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_w_centerline.py    \
+  work_dirs/mls_nusc_new_2_warmup_w_centerline/latest.pth  \
+  8  --eval

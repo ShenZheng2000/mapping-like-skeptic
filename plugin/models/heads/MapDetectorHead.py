@@ -652,8 +652,8 @@ class MapDetectorHead(nn.Module):
             tmp_vectors = lines[i]
             # set up the prop_flags
             tmp_prop_flags = torch.zeros(tmp_vectors.shape[0]).bool()
-            tmp_prop_flags[-100:] = 0
-            tmp_prop_flags[:-100] = 1
+            tmp_prop_flags[-self.num_queries:] = 0
+            tmp_prop_flags[:-self.num_queries] = 1
             num_preds, num_points2 = tmp_vectors.shape
             tmp_vectors = tmp_vectors.view(num_preds, num_points2//2, 2)
 
@@ -724,8 +724,8 @@ class MapDetectorHead(nn.Module):
         if self.loss_cls.use_sigmoid:
             tmp_scores, tmp_labels = scores[0].max(-1)
             tmp_scores = tmp_scores.sigmoid()
-            pos_track = tmp_scores[:-100] > thr_track
-            pos_det = tmp_scores[-100:] > thr_det
+            pos_track = tmp_scores[:-self.num_queries] > thr_track
+            pos_det = tmp_scores[-self.num_queries:] > thr_det
             pos = torch.cat([pos_track, pos_det], dim=0)
         else:
             raise RuntimeError('The experiment uses sigmoid for cls outputs')

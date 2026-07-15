@@ -43,13 +43,14 @@ class NuscMapExtractor(object):
         patch_size_lidar_coord = (self.roi_size[0], self.roi_size[1])
 
         vector_map_maptr = VectorizedLocalMap(self.nusc_maps[location], self.map_explorer[location],
-                                patch_size_lidar_coord, patch_size_ego_coord, map_classes=['divider','ped_crossing','boundary'])
+                                patch_size_lidar_coord, patch_size_ego_coord, map_classes=['divider','ped_crossing','boundary','centerline'])
         map_annos = vector_map_maptr.gen_vectorized_samples(e2g_translation, e2g_rotation)
-        
+
         return dict(
             divider=map_annos['divider'], # List[LineString]
             ped_crossing=map_annos['ped_crossing'], # List[LineString]
             boundary=map_annos['boundary'], # List[LineString]
+            centerline=map_annos['centerline'], # List[LineString]
             drivable_area=[], # List[Polygon],
         )
 

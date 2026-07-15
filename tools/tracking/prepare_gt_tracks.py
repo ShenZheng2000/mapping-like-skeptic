@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import mmcv
 from mmcv import Config
 import os
@@ -237,11 +238,7 @@ def match_two_consecutive_frames(prev_data, curr_data, roi_size, origin, cfg):
 
 def assign_global_ids(matchings_seq, vectors_seq):
     ids_seq = []
-    global_map_index = {
-        0: 0,
-        1: 0,
-        2: 0,
-    }
+    global_map_index = defaultdict(int)
     
     ids_0 = dict()
     for label, vectors in vectors_seq[0].items():

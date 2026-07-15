@@ -525,11 +525,13 @@ def check_circle(pre_line, vec):
         
 def connect_polygon(merged_polyline, merged_lines):
     start_end_connect = [merged_polyline[0], merged_polyline[-1]]
+    line2 = LineString(start_end_connect)
+    if line2.length == 0:
+        return merged_polyline
     iou = []
     length_ratio = []
     for one_merged_line in merged_lines:
         line1 = LineString(one_merged_line)
-        line2 = LineString(start_end_connect)
         thickness = 1
         thick_line1 = line1.buffer(thickness)
         thick_line2 = line2.buffer(thickness)
@@ -1339,6 +1341,8 @@ def vis_gt_data(scene_name, args, dataset, gt_data, origin, roi_size):
         prev2curr_pred_vectors = get_consecutive_vectors_with_opt(curr_vectors,prev2curr_matrix,origin,roi_size,False,False)
         for label, id_info in ids_info[idx].items():
             for vec_local_idx, vec_glb_idx in id_info.items():
+                if vec_local_idx >= len(prev2curr_pred_vectors[label]):
+                    continue
                 dict_key = "{}_{}".format(label, vec_glb_idx)
                 id_prev2curr_pred_vectors[dict_key].append(prev2curr_pred_vectors[label][vec_local_idx])
                 # gt_info_list[idx]["seq_info"].data[1] stores the frame time that the vector appears
