@@ -41,6 +41,11 @@ def parse_args():
         default=64,
         required=False,
         help='workers to process data')
+    parser.add_argument(
+        '--suffix',
+        type=str,
+        default='',
+        help='optional suffix appended to output pkl filename, e.g. "_mls"')
     args = parser.parse_args()
     return args
 
@@ -49,8 +54,9 @@ def create_av2_infos_mp(root_path,
                         log_ids,
                         split,
                         dest_path=None,
-                        num_multithread=64, 
-                        newsplit=False):
+                        num_multithread=64,
+                        newsplit=False,
+                        suffix=''):
     """Create info file of av2 dataset.
 
     Given the raw data, generate its related info file in pkl format.
@@ -125,10 +131,10 @@ def create_av2_infos_mp(root_path,
 
     if newsplit:
         info_path = osp.join(dest_path,
-                                    '{}_map_infos_{}_newsplit.pkl'.format(info_prefix, split))
+                                    '{}_map_infos_{}_newsplit{}.pkl'.format(info_prefix, split, suffix))
     else:
         info_path = osp.join(dest_path,
-                                    '{}_map_infos_{}.pkl'.format(info_prefix, split))
+                                    '{}_map_infos_{}{}.pkl'.format(info_prefix, split, suffix))
     print(f'saving results to {info_path}')
     mmcv.dump(infos, info_path)
 
@@ -204,15 +210,17 @@ if __name__ == '__main__':
         log_ids=train_split,
         info_prefix='av2',
         dest_path=args.data_root,
-        newsplit=args.newsplit)
-    
+        newsplit=args.newsplit,
+        suffix=args.suffix)
+
     create_av2_infos_mp(
         root_path=args.data_root,
         split='val',
         log_ids=val_split,
         info_prefix='av2',
         dest_path=args.data_root,
-        newsplit=args.newsplit)
+        newsplit=args.newsplit,
+        suffix=args.suffix)
 
     if test_split:
         create_av2_infos_mp(
@@ -220,4 +228,5 @@ if __name__ == '__main__':
             split='test',
             log_ids=test_split,
             info_prefix='av2',
-            dest_path=args.data_root,)
+            dest_path=args.data_root,
+            suffix=args.suffix)
