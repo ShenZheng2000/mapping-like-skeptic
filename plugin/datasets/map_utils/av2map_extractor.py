@@ -28,9 +28,10 @@ class AV2MapExtractor(object):
         roi_size (tuple or list): bev range
         id2map (dict): log id to map json path
     """
-    def __init__(self, roi_size: Union[Tuple, List], id2map: Dict) -> None:
+    def __init__(self, roi_size: Union[Tuple, List], id2map: Dict, map_classes=None) -> None:
         self.roi_size = roi_size
         self.id2map = {}
+        self.need_centerline = 'centerline' in (map_classes or [])
 
         for log_id, path in id2map.items():
             self.id2map[log_id] = ArgoverseStaticMap.from_json(Path(path))
@@ -170,7 +171,7 @@ class AV2MapExtractor(object):
         right_paths = get_path(right_lane_dict)
         local_dividers = left_paths + right_paths
 
-        return local_dividers
+        return local_dividers, nearby_ls_dict
 
     def proc_polygon(self,polygon, ego_SE3_city):
         interiors = []
@@ -351,6 +352,21 @@ class AV2MapExtractor(object):
 
         return divider_ls_dict
 
+    def extract_local_centerline(self, avm, nearby_ls_dict, ego_SE3_city):
+        roi_x, roi_y = self.roi_size[:2]
+        centerline_list = []
+        for ls_id, ls in nearby_ls_dict.items():
+            cl_city = avm.get_lane_segment_centerline(ls_id)
+            if cl_city is None or len(cl_city) < 2:
+                continue
+            pts_ego = ego_SE3_city.transform_point_cloud(cl_city)
+            mask = ((pts_ego[:, 0] >= -roi_x / 2) & (pts_ego[:, 0] <= roi_x / 2) &
+                    (pts_ego[:, 1] >= -roi_y / 2) & (pts_ego[:, 1] <= roi_y / 2))
+            if mask.sum() < 2:
+                continue
+            centerline_list.append(LineString(pts_ego[mask, :3]))
+        return centerline_list
+
     def get_scene_ped_crossings(self,avm,e2g_translation,e2g_rotation,polygon_ped=True):
 
         g2e_translation = e2g_rotation.T.dot(-e2g_translation)
@@ -421,21 +437,19 @@ class AV2MapExtractor(object):
         ego_SE3_city = city_SE2_ego.inverse()
         
         patch = NuScenesMapExplorer.get_patch_coord(patch_box, patch_angle)
-        nearby_dividers = self.generate_nearby_dividers(avm, e2g_translation,e2g_rotation,patch)
-        # pdb.set_trace()
-        map_anno=dict(
+        nearby_dividers, nearby_ls_dict = self.generate_nearby_dividers(avm, e2g_translation, e2g_rotation, patch)
+        map_anno = dict(
             divider=[],
             ped_crossing=[],
             boundary=[],
+            centerline=[],
             drivable_area=[],
         )
-        map_anno['ped_crossing'] = self.get_scene_ped_crossings(avm,e2g_translation,e2g_rotation,polygon_ped=polygon_ped)
-        
-        map_anno['boundary'] = self.extract_local_boundary(avm, ego_SE3_city, patch_box, patch_angle,patch_size)
-        # map_anno['centerline'] = extract_local_centerline(nearby_centerlines, ego_SE3_city, patch_box, patch_angle,patch_size)
-        all_dividers = self.extract_local_divider(nearby_dividers, ego_SE3_city, patch_box, patch_angle,patch_size)
+        map_anno['ped_crossing'] = self.get_scene_ped_crossings(avm, e2g_translation, e2g_rotation, polygon_ped=polygon_ped)
+        map_anno['boundary'] = self.extract_local_boundary(avm, ego_SE3_city, patch_box, patch_angle, patch_size)
+        all_dividers = self.extract_local_divider(nearby_dividers, ego_SE3_city, patch_box, patch_angle, patch_size)
+        map_anno['divider'] = remove_boundary_dividers(all_dividers, map_anno['boundary'])
+        if self.need_centerline:
+            map_anno['centerline'] = self.extract_local_centerline(avm, nearby_ls_dict, ego_SE3_city)
 
-        map_anno['divider'] = remove_boundary_dividers(all_dividers,map_anno['boundary'])
-
-        ########
         return map_anno

@@ -29,7 +29,7 @@ class AV2Dataset(BaseMapDataset):
 
     def __init__(self, **kwargs,):
         super().__init__(**kwargs)
-        self.map_extractor = AV2MapExtractor(self.roi_size, self.id2map)
+        self.map_extractor = AV2MapExtractor(self.roi_size, self.id2map, map_classes=list(self.cat2id.keys()))
 
         self.renderer = Renderer(self.cat2id, self.roi_size, 'av2')
     
