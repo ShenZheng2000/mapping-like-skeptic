@@ -464,7 +464,7 @@ lr_config = dict(
 # evaluation = dict(interval=num_iters_per_epoch*10000, process_period=None)
 evaluation = dict(interval=num_epochs_interval*num_iters_per_epoch, process_period=None) # NOTE: increase eval interval for faster debugging
 find_unused_parameters = True  #### when use checkpoint, find_unused_parameters must be False
-checkpoint_config = dict(interval=num_iters_per_epoch)
+checkpoint_config = dict(interval=num_iters_per_epoch * 2)  # save every 2 epochs (~10 ckpts for 20 epochs)
 
 runner = dict(
     type='MyRunnerWrapper', max_iters=num_epochs * num_iters_per_epoch)

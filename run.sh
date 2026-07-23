@@ -3,7 +3,7 @@ ulimit -n 65536
 ############################# Argoverse2 Experiments #############################
 # python tools/data_converter/argoverse_converter.py --data-root datasets/argoverse2_geosplit --suffix _mls
 
-# symlink the tracking files
+# symlink the tracking files (optional, if don't have _mls in pkl)
 # cd /scratch/shenzhen/Datasets/argoverse2_geosplit
 # ln -s av2_map_infos_train_gt_tracks.pkl av2_map_infos_train_mls_gt_tracks.pkl
 # ln -s av2_map_infos_val_gt_tracks.pkl av2_map_infos_val_mls_gt_tracks.pkl
@@ -32,20 +32,20 @@ ulimit -n 65536
 
 # train (mobilenetv3 backbone; 100m x 50m) => skip for now
 
-# train (w/ centerline)
+# train (w/ centerline) TODO resume from latest ckpts
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_w_centerline.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_w_centerline.py 4
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_w_centerline.py 4
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_w_centerline.py 4
 
-# train (mobilenetv3 backbone, w/ centerline)
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_mobilenetv3_w_centerline.py 4
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_mobilenetv3_w_centerline.py 4
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv3_w_centerline.py 4
+# train (mobilenetv3 backbone, w/ centerline) TODO resume from latest ckpts
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_mobilenetv3_w_centerline.py 4
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_mobilenetv3_w_centerline.py 4
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv3_w_centerline.py 4
 
 
 # bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/av2_newsplit/stage3_100x50.py    \
-#   work_dirs/stage3_100x50/latest.pth  \
+#   plugin/configs/skeptic/av2_newsplit/stage3.py    \
+#   work_dirs/stage3/latest.pth  \
 #   4 --eval
 
 
@@ -89,8 +89,8 @@ bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_mobilenetv3_w_centerline.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py 8
 
-# # NOTE: once any stage2 done, first run to debug, and record numbers? 
-PORT=29501 bash tools/dist_test.sh  \
-  plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py    \
-  work_dirs/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline/latest.pth  \
-  8  --eval
+# # # NOTE: once any stage2 done, first run to debug, and record numbers? 
+# PORT=29501 bash tools/dist_test.sh  \
+#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py    \
+#   work_dirs/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline/latest.pth  \
+#   8  --eval
