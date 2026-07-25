@@ -20,7 +20,6 @@ ulimit -n 65536
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3.py 4
 
 # train (100m x 50m)
-# Maybe: also need to prepare different tracking files for 100m x 50m, if error occurs during training. 
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_100x50.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_100x50.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50.py 4
@@ -30,7 +29,11 @@ ulimit -n 65536
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_mobilenetv3.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv3.py 4
 
-# train (mobilenetv3 backbone; 100m x 50m) => skip for now
+# train (mobilenetv3 backbone; 100m x 50m)
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_100x50_mobilenetv3.py 4
+bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_100x50_mobilenetv3.py 4
+bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py 4
+
 
 # train (w/ centerline) TODO resume from latest ckpts
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_w_centerline.py 4
@@ -44,8 +47,8 @@ ulimit -n 65536
 
 
 # bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/av2_newsplit/stage3.py    \
-#   work_dirs/stage3/latest.pth  \
+#   plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py    \
+#   work_dirs/stage3_100x50_mobilenetv3/latest.pth  \
 #   4 --eval
 
 

@@ -1,3 +1,7 @@
+gradcam_resnet.py
+test_ttt_debug.sh
+tools/visualization/cam_proj.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

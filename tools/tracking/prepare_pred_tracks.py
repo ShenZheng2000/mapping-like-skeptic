@@ -56,12 +56,12 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def match_two_consecutive_frames_pred(args,prev_data,prev_meta,  curr_data, curr_meta,roi_size, origin, cfg):
+def match_two_consecutive_frames_pred(args,prev_data,prev_meta,  curr_data, curr_meta,roi_size, origin, cfg, cat2id=None):
 
     prev2curr_matrix = get_prev2curr_matrix(prev_meta,curr_meta)
 
-    prev_vectors = filter_vectors(prev_data,origin,roi_size,args.thr)
-    curr_vectors = filter_vectors(curr_data,origin,roi_size,args.thr)
+    prev_vectors = filter_vectors(prev_data,origin,roi_size,args.thr,cat2id=cat2id)
+    curr_vectors = filter_vectors(curr_data,origin,roi_size,args.thr,cat2id=cat2id)
 
     prev_vectors, curr_vectors, prev2curr_vectors = get_consecutive_vectors(prev_vectors,curr_vectors,
                                     prev2curr_matrix,origin,roi_size) 
@@ -73,7 +73,7 @@ def match_two_consecutive_frames_pred(args,prev_data,prev_meta,  curr_data, curr
     curr2prev_matchings = {label:[match_info[1],match_info[0]]  for label,match_info in prev2curr_matchings.items()}
     return curr2prev_matchings
 
-def collect_pred(data,thr):
+def collect_pred(data, thr, cat2id=None):
     vectors = {label: [] for label in cat2id.values()}
     scores = {label: [] for label in cat2id.values()}
     for i in range(len(data['labels'])):
@@ -84,17 +84,13 @@ def collect_pred(data,thr):
     return vectors, scores
 
 def get_scene_matching_result(args,cfg,pred_results,dataset,origin,roi_size,
-                              scene_name2idx):
+                              scene_name2idx,cat2id=None):
     ### obtain local id sequence matching results of predictions
     vectors_seq = []
     scores_seq = []
 
     ids_seq = []
-    global_map_index = {
-        0: 0,
-        1: 0,
-        2: 0,
-    }
+    global_map_index = {label: 0 for label in cat2id.values()}
     frame_token_list = []
     pred_data_list = []
     meta_list = []
@@ -108,7 +104,7 @@ def get_scene_matching_result(args,cfg,pred_results,dataset,origin,roi_size,
 
     for local_idx in range(len(frame_token_list)):
         curr_pred_data = pred_data_list[local_idx]
-        vectors_info, scores = collect_pred(curr_pred_data,args.thr)
+        vectors_info, scores = collect_pred(curr_pred_data,args.thr,cat2id=cat2id)
         vectors_seq.append(vectors_info)
         scores_seq.append(scores)
 
@@ -129,14 +125,14 @@ def get_scene_matching_result(args,cfg,pred_results,dataset,origin,roi_size,
         tmp_ids_list = []
         for comeback_idx,prev_idx in enumerate(history_range):
 
-            tmp_ids = {label:{} for label in cat2id.values()} 
+            tmp_ids = {label:{} for label in cat2id.values()}
             curr_pred_data = pred_data_list[local_idx]
             comeback_pred_data = pred_data_list[prev_idx]
             curr_meta = meta_list[local_idx]
             comeback_meta = meta_list[prev_idx]
 
             curr2prev_matching = match_two_consecutive_frames_pred(args,comeback_pred_data,comeback_meta,
-                                            curr_pred_data, curr_meta,roi_size, origin, cfg)
+                                            curr_pred_data, curr_meta,roi_size, origin, cfg, cat2id=cat2id)
             
             for label,match_info in curr2prev_matching.items():
                 for curr_match_local_idx,prev_match_local_idx in enumerate(match_info[0]):
@@ -173,8 +169,8 @@ def get_scene_matching_result(args,cfg,pred_results,dataset,origin,roi_size,
 
     return ids_seq, vectors_seq, scores_seq, meta_list
 
-def generate_results(ids_info,vectors_seq,scores_seq,meta_list,scene_name):
-    ### assign global id 
+def generate_results(ids_info,vectors_seq,scores_seq,meta_list,scene_name,cat2id=None):
+    ### assign global id
 
     global_gt_idx = {}
     result_list = []
@@ -201,11 +197,11 @@ def generate_results(ids_info,vectors_seq,scores_seq,meta_list,scene_name):
         result_list.append(output_dict)
     return result_list
 
-def get_matching_single(scene_name,args,scene_name2idx,dataset,cfg,pred_results,origin,roi_size):
+def get_matching_single(scene_name,args,scene_name2idx,dataset,cfg,pred_results,origin,roi_size,cat2id=None):
     name2idx = scene_name2idx[scene_name]
     ids_info, vectors_seq,scores_seq,meta_list = get_scene_matching_result(args,cfg,pred_results,dataset,
-            origin,roi_size,name2idx)
-    gen_result = generate_results(ids_info,vectors_seq,scores_seq,meta_list,scene_name)
+            origin,roi_size,name2idx,cat2id=cat2id)
+    gen_result = generate_results(ids_info,vectors_seq,scores_seq,meta_list,scene_name,cat2id=cat2id)
 
     return (scene_name,ids_info,gen_result)
 
@@ -215,6 +211,7 @@ def main():
     cfg = Config.fromfile(args.config)
     import_plugin(cfg)
     dataset = build_dataset(cfg.match_config)
+    cat2id = cfg.match_config['cat2id']
 
     scene_name2idx = {}
     scene_name2token = {}
@@ -244,7 +241,7 @@ def main():
 
     if N_WORKERS > 0:
         fn = partial(get_matching_single, scene_name2idx=scene_name2idx,dataset=dataset,cfg=cfg,
-                    pred_results=results,origin=origin,roi_size=roi_size)
+                    pred_results=results,origin=origin,roi_size=roi_size,cat2id=cat2id)
         pool = Pool(N_WORKERS)
         matching_results = pool.starmap(fn,scene_info_list)
         pool.close()
@@ -253,7 +250,7 @@ def main():
         for scene_info in scene_info_list:
             scene_name = scene_info[0]
             single_matching_result = get_matching_single(scene_name=scene_name, scene_name2idx=scene_name2idx,
-                    args=args,  dataset=dataset,cfg=cfg,pred_results=results,origin=origin,roi_size=roi_size)
+                    args=args,  dataset=dataset,cfg=cfg,pred_results=results,origin=origin,roi_size=roi_size,cat2id=cat2id)
             matching_results.append(single_matching_result)
 
     final_reuslt = []

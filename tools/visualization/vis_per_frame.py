@@ -95,8 +95,8 @@ def save_as_video(image_list, mp4_output_path, scale=None):
     print("mp4 saved to : ", mp4_output_path)
 
 _BOX_COLORS = {
-    'vehicle': 'orange',
-    'human': 'cyan',
+    'vehicle': 'gray',
+    'human': 'gray',
     'movable_object': 'gray',
     'static_object': 'gray',
 }
@@ -157,6 +157,9 @@ def plot_one_frame_results(vectors, id_info, roi_size, scene_dir, args, boxes=No
         elif label == 2: # boundary
             color = 'g'
             label_text = 'B'
+        elif label == 3: # centerline
+            color = 'orange'
+            label_text = 'C'
 
         if len(vecs) == 0:
             continue
@@ -225,7 +228,7 @@ def vis_pred_data(scene_name, args, pred_results, origin, roi_size,
     os.makedirs(scene_dir,exist_ok=True)
 
     g2l_id_mapping = dict()
-    label_ins_counter = {0:0, 1:0, 2:0}
+    label_ins_counter = {0:0, 1:0, 2:0, 3:0}
 
     all_viz_images = []
 

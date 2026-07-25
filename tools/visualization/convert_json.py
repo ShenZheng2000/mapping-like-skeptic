@@ -2,7 +2,7 @@ import argparse
 import mmcv
 
 # maptracker script's cat2id — map by NAME (MapTRv2 type ints are ordered differently)
-cat2id = {'ped_crossing': 0, 'divider': 1, 'boundary': 2}
+cat2id = {'ped_crossing': 0, 'divider': 1, 'boundary': 2, 'centerline': 3}
 
 
 def convert(src, strip_token_prefix=False, rotate=True):

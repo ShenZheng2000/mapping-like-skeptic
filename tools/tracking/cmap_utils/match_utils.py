@@ -133,7 +133,7 @@ def get_consecutive_vectors(prev_vectors,curr_vectors,prev2curr_matrix,origin,ro
     
     return prev_vectors, curr_vectors, prev2curr_vectors
 
-def filter_vectors(data_info, origin,roi_size,thr,num_interp=20):
+def filter_vectors(data_info, origin, roi_size, thr, cat2id=cat2id, num_interp=20):
     ### filter vectors over threshold
     filtered_vectors = {label: [] for label in cat2id.values()}
     for i in range(len(data_info['labels'])):

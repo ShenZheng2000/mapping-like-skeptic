@@ -24,7 +24,6 @@
 #     --per_frame_result 1
 
 
-
 # # # # # nuScenes (predictions, vis_local) - original
 # python tools/visualization/vis_per_frame.py \
 #     plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune.py \
@@ -48,6 +47,24 @@
 #     plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune.py \
 #     --data_path datasets/nuscenes/nuscenes_map_infos_val_gt_tracks.pkl \
 #     --out_dir vis_local/nuscenes_geosplit/gt  \
+#     --option vis-gt \
+#     --orientation bt \
+#     --boxes_pkl datasets/nuscenes/nuscenes_map_infos_val_with_boxes.pkl
+
+# # # # # # nuScenes (predictions, vis_local) - w_centerline
+# python tools/visualization/vis_per_frame.py \
+#     plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_w_centerline.py \
+#     --data_path work_dirs/mls_nusc_new_3_joint_finetune_w_centerline/pos_predictions.pkl \
+#     --out_dir vis_local/nuscenes_geosplit/skeptic_w_centerline \
+#     --option vis-pred \
+#     --orientation bt \
+#     --boxes_pkl datasets/nuscenes/nuscenes_map_infos_val_with_boxes.pkl
+
+# # # # # # nuScenes (GT, vis_local) - w_centerline
+# python tools/visualization/vis_per_frame.py \
+#     plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_w_centerline.py \
+#     --data_path datasets/nuscenes/nuscenes_map_infos_val_gt_tracks.pkl \
+#     --out_dir vis_local/nuscenes_geosplit/gt_w_centerline \
 #     --option vis-gt \
 #     --orientation bt \
 #     --boxes_pkl datasets/nuscenes/nuscenes_map_infos_val_with_boxes.pkl
