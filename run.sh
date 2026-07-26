@@ -31,24 +31,24 @@ ulimit -n 65536
 
 # train (mobilenetv3 backbone; 100m x 50m)
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_100x50_mobilenetv3.py 4
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_100x50_mobilenetv3.py 4
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_100x50_mobilenetv3.py 4
 bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py 4
 
 
-# train (w/ centerline) TODO resume from latest ckpts
+# train (w/ centerline)
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_w_centerline.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_w_centerline.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_w_centerline.py 4
 
-# train (mobilenetv3 backbone, w/ centerline) TODO resume from latest ckpts
+# train (mobilenetv3 backbone, w/ centerline)
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_mobilenetv3_w_centerline.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_mobilenetv3_w_centerline.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv3_w_centerline.py 4
 
 
-# bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py    \
-#   work_dirs/stage3_100x50_mobilenetv3/latest.pth  \
+# PORT=29502 CUDA_VISIBLE_DEVICES=2,3,4,5 bash tools/dist_test.sh  \
+#   plugin/configs/skeptic/av2_newsplit/stage2_100x50.py    \
+#   work_dirs/stage2_100x50/latest.pth  \
 #   4 --eval
 
 
@@ -68,7 +68,7 @@ bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mob
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune.py 8
 
 # train (100m x 50m)
-# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_1_bev_pretrain.py 8 --resume-from work_dirs/mls_nusc_new_100x50_1_bev_pretrain/iter_34800.pth
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_1_bev_pretrain.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_2_warmup.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_3_joint_finetune.py 8
 
@@ -78,7 +78,7 @@ bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mob
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3.py 8
 
 # train (mobilenetv3 backbone; 100m x 50m)
-# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_1_bev_pretrain_mobilenetv3.py 8 --resume-from work_dirs/mls_nusc_new_100x50_1_bev_pretrain_mobilenetv3/iter_6960.pth
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_1_bev_pretrain_mobilenetv3.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_2_warmup_mobilenetv3.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_3_joint_finetune_mobilenetv3.py 8
 
@@ -92,8 +92,8 @@ bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mob
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_mobilenetv3_w_centerline.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py 8
 
-# # # NOTE: once any stage2 done, first run to debug, and record numbers? 
-# PORT=29501 bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py    \
-#   work_dirs/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline/latest.pth  \
+# # # # NOTE: once any stage2 done, first run to debug, and record numbers? 
+# PORT=29502 bash tools/dist_test.sh  \
+#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_2_warmup_mobilenetv3.py    \
+#   work_dirs/mls_nusc_new_100x50_2_warmup_mobilenetv3/latest.pth  \
 #   8  --eval

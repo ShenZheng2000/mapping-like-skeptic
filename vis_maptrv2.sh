@@ -1,7 +1,7 @@
 # Ref: https://github.com/woodfrog/maptracker/issues/33
 # Ref: https://github.com/woodfrog/maptracker/issues/51
 
-# MapTRv2 visualization on nuscenes (json -> pkl)
+############################# nuScenes Experiments #############################
 # DIR=/data3/shenzhen/Waymo_Projects/MapTR/test/maptrv2_nusc_r50_24ep/Wed_Jun__3_19_08_51_2026/pts_bbox
 
 # python tools/visualization/convert_json.py \
@@ -30,7 +30,7 @@
 
 
 
-# # MapTRv2 visualization on nuscenes w/ centerline (json -> pkl)
+############################# nuScenes Experiments (w/ centerline) #############################
 # DIR=/data3/shenzhen/Waymo_Projects/MapTR/test/maptrv2_nusc_r50_24ep_w_centerline/Fri_Jul_17_02_15_05_2026/pts_bbox
 
 # python tools/visualization/convert_json.py \
@@ -41,25 +41,23 @@
 #   --result_path $DIR/submission_vector.json
 
 # NOTE: --per_frame_result 0 to speed up visualization! use 1 for all frames!
-# TODO: do this later, once centelriner stuff are added 
 # python tools/visualization/vis_global.py \
 #     plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_w_centerline.py \
 #     --data_path $DIR/pos_predictions_5.pkl \
 #     --out_dir $DIR/vis_global \
 #     --option vis-pred \
-#     --per_frame_result 0
+#     --per_frame_result 1
 
 # python tools/visualization/vis_per_frame.py \
 #     plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_w_centerline.py \
 #     --data_path $DIR/pos_predictions_5.pkl \
 #     --out_dir $DIR/vis_local \
 #     --option vis-pred \
-#     --orientation bt \
-#     --boxes_pkl datasets/nuscenes/nuscenes_map_infos_val_with_boxes.pkl
+#     --orientation lr
 
 
 
-# MapTRv2 visualization on argoverse 2 (json -> pkl)
+############################# Argoverse2 Experiments #############################
 # DIR=/data3/shenzhen/Waymo_Projects/MapTR/test/maptrv2_av2_3d_r50_6ep_geosplit_allframes/Fri_Jun_12_00_12_54_2026/pts_bbox
 
 # python tools/visualization/convert_json.py \

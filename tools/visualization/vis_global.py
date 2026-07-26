@@ -857,7 +857,9 @@ def plot_fig_merged_per_frame(num_frames, car_trajectory, x_min, x_max, y_min, y
                 color = 'r'
             elif label == 2: # boundary
                 color = 'g'
-            
+            elif label == 3: # centerline
+                color = 'orange'
+
             if label == 0: # crossing, merged by convex hull
                 if need_merge:
                     polygon = merge_corssing(polylines)
@@ -913,7 +915,25 @@ def plot_fig_merged_per_frame(num_frames, car_trajectory, x_min, x_max, y_min, y
                 # update instance bank for line
                 updated_polylines = [LineString(vec) for vec in polylines_vecs]
                 instance_bank[vec_tag] = updated_polylines
-        
+
+            elif label == 3: # centerline, merged like divider
+                if need_merge:
+                    polylines_vecs = [np.array(one_line.coords) for one_line in polylines]
+                    polylines_vecs = merge_divider(polylines_vecs)
+                else:
+                    polylines_vecs = [np.array(line.coords) for line in polylines]
+
+                for one_line in polylines_vecs:
+                    one_line = np.array(LineString(one_line).simplify(args.simplify*2).coords)
+                    pts = one_line[:, :2]
+                    x = np.array([pt[0] for pt in pts])
+                    y = np.array([pt[1] for pt in pts])
+                    ax.plot(x, y, '-', color=color, linewidth=20, markersize=50, alpha=args.line_opacity)
+                    ax.plot(x, y, "o", color=color, markersize=50)
+
+                updated_polylines = [LineString(vec) for vec in polylines_vecs]
+                instance_bank[vec_tag] = updated_polylines
+
         pred_save_path = pred_save_folder + f'/{frame_timestep}.png'
         plt.grid(False)
         plt.savefig(pred_save_path, bbox_inches='tight', transparent=args.transparent, dpi=args.dpi)
@@ -970,7 +990,9 @@ def plot_fig_merged(car_trajectory, x_min, x_max, y_min, y_max, pred_save_path, 
             color = 'r'
         elif label == 2: # boundary
             color = 'g'
-    
+        elif label == 3: # centerline
+            color = 'orange'
+
         # get the vectors belongs to the same instance
         polylines = []
         for vec in vecs:
@@ -1009,10 +1031,20 @@ def plot_fig_merged(car_trajectory, x_min, x_max, y_min, y_max, pred_save_path, 
                 y = np.array([pt[1] for pt in pts])
                 ax.plot(x, y, '-', color=color, linewidth=20, markersize=50, alpha=args.line_opacity)
                 ax.plot(x, y, "o", color=color, markersize=50)
+        elif label == 3: # centerline, merged like divider
+            polylines_vecs = [np.array(one_line.coords) for one_line in polylines]
+            polylines_vecs = merge_divider(polylines_vecs)
+            for one_line in polylines_vecs:
+                one_line = np.array(LineString(one_line).simplify(args.simplify).coords)
+                pts = one_line[:, :2]
+                x = np.array([pt[0] for pt in pts])
+                y = np.array([pt[1] for pt in pts])
+                ax.plot(x, y, '-', color=color, linewidth=20, markersize=50, alpha=args.line_opacity)
+                ax.plot(x, y, "o", color=color, markersize=50)
 
     plt.grid(False)
     plt.savefig(pred_save_path, bbox_inches='tight', transparent=args.transparent, dpi=args.dpi)
-    plt.clf() 
+    plt.clf()
     plt.close(fig)
     print("image saved to : ", pred_save_path)
 
@@ -1067,7 +1099,9 @@ def plot_fig_unmerged_per_frame(num_frames, car_trajectory, x_min, x_max, y_min,
                 color = 'r'
             elif label == 2: # boundary
                 color = 'g'
-            
+            elif label == 3: # centerline
+                color = 'orange'
+
             polyline = LineString(curr_vec)
             vector = np.array(polyline.coords)
             pts = vector[:, :2]
@@ -1130,7 +1164,9 @@ def plot_fig_unmerged(car_trajectory, x_min, x_max, y_min, y_max, pred_save_path
             color = 'r'
         elif label == 2: # boundary
             color = 'g'
-        
+        elif label == 3: # centerline
+            color = 'orange'
+
         polylines = []
         for vec in vecs:
             polylines.append(LineString(vec))
