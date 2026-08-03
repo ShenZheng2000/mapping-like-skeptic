@@ -18,7 +18,7 @@ from einops import rearrange
 @HEADS.register_module(force=True)
 class MapDetectorHead(nn.Module):
 
-    def __init__(self, 
+    def __init__(self,
                  num_queries,
                  num_classes=3,
                  in_channels=128,
@@ -33,6 +33,7 @@ class MapDetectorHead(nn.Module):
                  sync_cls_avg_factor=True,
                  bg_cls_weight=0.,
                  trans_loss_weight=0.0,
+                 use_laplace_uncertainty=False,
                  transformer=dict(),
                  loss_cls=dict(),
                  loss_reg=dict(),
@@ -53,6 +54,7 @@ class MapDetectorHead(nn.Module):
         self.bg_cls_weight = bg_cls_weight
         
         self.trans_loss_weight = trans_loss_weight
+        self.use_laplace_uncertainty = use_laplace_uncertainty
         # NOTE: below is a simple MLP to transform the query from prev-frame to cur-frame,
         # we moved the propagation part outside,
             
@@ -160,6 +162,23 @@ class MapDetectorHead(nn.Module):
         self.reg_branches = reg_branches
         self.cls_branches = cls_branches
 
+        if self.use_laplace_uncertainty:
+            beta_branch = nn.Sequential(
+                Linear(self.embed_dims, 2 * self.embed_dims),
+                nn.LayerNorm(2 * self.embed_dims),
+                nn.ReLU(),
+                Linear(2 * self.embed_dims, 2 * self.embed_dims),
+                nn.LayerNorm(2 * self.embed_dims),
+                nn.ReLU(),
+                Linear(2 * self.embed_dims, self.num_points * self.coord_dim),
+            )
+            if self.different_heads:
+                self.beta_branches = nn.ModuleList(
+                    [copy.deepcopy(beta_branch) for _ in range(num_layers)])
+            else:
+                self.beta_branches = nn.ModuleList(
+                    [beta_branch for _ in range(num_layers)])
+
     def _prepare_context(self, bev_features):
         """Prepare class label and vertex context."""
         device = bev_features.device
@@ -242,12 +261,12 @@ class MapDetectorHead(nn.Module):
         )
 
         outputs = []
-        for i, (queries) in enumerate(inter_queries):
-            reg_points = inter_references[i] # (bs, num_q, num_points, 2)
+        for layer_i, (queries) in enumerate(inter_queries):
+            reg_points = inter_references[layer_i] # (bs, num_q, num_points, 2)
             bs = reg_points.shape[0]
             reg_points = reg_points.view(bs, -1, 2*self.num_points) # (bs, num_q, 2*num_points)
 
-            scores = self.cls_branches[i](queries) # (bs, num_q, num_classes)
+            scores = self.cls_branches[layer_i](queries) # (bs, num_q, num_classes)
 
             reg_points_list = []
             scores_list = []
@@ -260,6 +279,11 @@ class MapDetectorHead(nn.Module):
                 'lines': reg_points_list,
                 'scores': scores_list
             }
+
+            if self.use_laplace_uncertainty:
+                betas = self.beta_branches[layer_i](queries)  # (bs, num_q, 2*num_points)
+                pred_dict['betas'] = [betas[i] for i in range(bs)]
+
             if return_matching:
                 pred_dict['hs_embeds'] = queries
             outputs.append(pred_dict)
@@ -352,6 +376,11 @@ class MapDetectorHead(nn.Module):
                 'scores': scores_list,
                 'hs_embeds': queries,
             }
+
+            if self.use_laplace_uncertainty:
+                betas = self.beta_branches[i_query](queries)  # (bs, num_q, 2*num_points)
+                pred_dict['betas'] = [betas[i] for i in range(bs)]
+
             outputs.append(pred_dict)
 
         return outputs
@@ -575,8 +604,14 @@ class MapDetectorHead(nn.Module):
         assert len(pred_lines) == len(gt_lines)
         assert len(gt_lines) == len(line_weights)
 
+        if self.use_laplace_uncertainty and 'betas' in preds:
+            pred_betas = torch.cat(preds['betas'], dim=0)  # (N, 2*num_pts)
+            pred_for_loss = torch.cat([pred_lines, pred_betas], dim=-1)  # (N, 4*num_pts)
+        else:
+            pred_for_loss = pred_lines
+
         loss_reg = self.loss_reg(
-            pred_lines, gt_lines, line_weights, avg_factor=num_total_pos)
+            pred_for_loss, gt_lines, line_weights, avg_factor=num_total_pos)
 
         loss_dict = dict(
             cls=loss_cls,
@@ -672,20 +707,27 @@ class MapDetectorHead(nn.Module):
             tmp_labels = tmp_labels[pos]
             tmp_prop_flags = tmp_prop_flags[pos]
 
+            if self.use_laplace_uncertainty and 'betas' in preds_dict:
+                tmp_betas = preds_dict['betas'][i]  # (num_q_total, 2*num_pts)
+                tmp_betas = tmp_betas.view(num_preds, self.num_points, 2)
+                tmp_betas = tmp_betas[pos]
+
             if len(tmp_scores) == 0:
                 single_result = {
-                'vectors': [],
-                'scores': [],
-                'labels': [],
-                'props': [],
-                'token': tokens[i]
-            }
+                    'vectors': [],
+                    'scores': [],
+                    'labels': [],
+                    'props': [],
+                    'betas': None,
+                    'token': tokens[i]
+                }
             else:
                 single_result = {
                     'vectors': tmp_vectors.detach().cpu().numpy(),
                     'scores': tmp_scores.detach().cpu().numpy(),
                     'labels': tmp_labels.detach().cpu().numpy(),
                     'props': tmp_prop_flags.detach().cpu().numpy(),
+                    'betas': tmp_betas.detach().cpu().numpy() if (self.use_laplace_uncertainty and 'betas' in preds_dict) else None,
                     'token': tokens[i]
                 }
 

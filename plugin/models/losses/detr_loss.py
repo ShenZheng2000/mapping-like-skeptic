@@ -1,4 +1,5 @@
 import torch
+import torch.distributions as D
 from torch import nn as nn
 from torch.nn import functional as F
 from mmdet.models.losses import l1_loss, smooth_l1_loss
@@ -62,6 +63,39 @@ class LinesL1Loss(nn.Module):
         loss = loss / num_points
 
         return loss*self.loss_weight
+
+
+@LOSSES.register_module()
+class LaplaceNLLLoss(nn.Module):
+
+    def __init__(self, reduction='mean', loss_weight=1.0):
+        super().__init__()
+        self.reduction = reduction
+        self.loss_weight = loss_weight
+
+    def forward(self,
+                pred,
+                target,
+                weight=None,
+                avg_factor=None,
+                reduction_override=None):
+        # pred:   (N, 4*num_pts) — first half is means, second half is raw betas
+        # target: (N, 2*num_pts)
+        n = target.shape[-1]
+        means = pred[..., :n]
+        betas = F.softplus(pred[..., n:]).clamp(min=1e-5, max=10.0)
+
+        nll = -D.Laplace(means, betas).log_prob(target)  # (N, 2*num_pts)
+
+        if weight is not None:
+            nll = nll * weight
+
+        if avg_factor is not None:
+            loss = nll.sum() / (avg_factor * n)
+        else:
+            loss = nll.mean()
+
+        return loss * self.loss_weight
 
 
 @mmcv.jit(derivate=True, coderize=True)

@@ -12,7 +12,7 @@ ulimit -n 65536
 # cd /scratch/shenzhen/Datasets/argoverse2_geosplit
 # ln -s av2_map_infos_train_mls.pkl av2_map_infos_train_100x50.pkl
 # ln -s av2_map_infos_val_mls.pkl av2_map_infos_val_100x50.pkl
-# then, proceed with prepare_gt_tracks.py ...
+# then, MUST proceed with prepare_gt_tracks.py to generate new tracking files ...
 
 # train
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1.py 4
@@ -32,7 +32,7 @@ ulimit -n 65536
 # train (mobilenetv3 backbone; 100m x 50m)
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage1_100x50_mobilenetv3.py 4
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage2_100x50_mobilenetv3.py 4
-bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py 4
+# bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py 4
 
 
 # train (w/ centerline)
@@ -46,9 +46,9 @@ bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mob
 # bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_mobilenetv3_w_centerline.py 4
 
 
-# PORT=29502 CUDA_VISIBLE_DEVICES=2,3,4,5 bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/av2_newsplit/stage2_100x50.py    \
-#   work_dirs/stage2_100x50/latest.pth  \
+# bash tools/dist_test.sh  \
+#   plugin/configs/skeptic/av2_newsplit/stage3_100x50_mobilenetv3.py    \
+#   work_dirs/stage3_100x50_mobilenetv3/latest.pth  \
 #   4 --eval
 
 
@@ -92,8 +92,25 @@ bash ./tools/dist_train.sh plugin/configs/skeptic/av2_newsplit/stage3_100x50_mob
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_mobilenetv3_w_centerline.py 8
 # bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_mobilenetv3_w_centerline.py 8
 
-# # # # NOTE: once any stage2 done, first run to debug, and record numbers? 
+# # train (uncertainty)
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_uncertainty.py 8
+# bash ./tools/dist_train.sh plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_uncertainty.py 8
+
+# # # # NOTE: once any stage2 done, first run to debug, and record numbers?
 # PORT=29502 bash tools/dist_test.sh  \
-#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_100x50_2_warmup_mobilenetv3.py    \
-#   work_dirs/mls_nusc_new_100x50_2_warmup_mobilenetv3/latest.pth  \
+#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_uncertainty.py    \
+#   work_dirs/mls_nusc_new_3_joint_finetune_uncertainty/latest.pth  \
 #   8  --eval
+
+# # infer on train split (needed for adaptor/trajectory model training)
+# stage 2
+# PORT=29503 bash tools/dist_test.sh \
+#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_2_warmup_uncertainty_train_infer.py \
+#   work_dirs/mls_nusc_new_2_warmup_uncertainty/latest.pth \
+#   8 --eval --eval-options tmp_gts_path=./tmp_gts_nusc_train_60x30.pkl
+
+# stage 3
+# PORT=29503 bash tools/dist_test.sh \
+#   plugin/configs/skeptic/nuscenes_newsplit/mls_nusc_new_3_joint_finetune_uncertainty_train_infer.py \
+#   work_dirs/mls_nusc_new_3_joint_finetune_uncertainty/latest.pth \
+#   8 --eval --eval-options tmp_gts_path=./tmp_gts_nusc_train_60x30.pkl

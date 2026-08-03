@@ -241,8 +241,12 @@ class Skeptic(BaseMapper):
                     # set the weight of invalid normed targets to 0 (outside current bev frame)
                     invalid_bev_mask = (normed_targets <= 0) | (normed_targets >= 1)
                     weights[invalid_bev_mask] = 0
-                    # (num_prop, 2*num_pts)
-                    trans_reg_loss += self.head.loss_reg(pred, normed_targets, weights, avg_factor=1.0)
+                    if self.head.use_laplace_uncertainty:
+                        pred_betas = self.head.beta_branches[-1](track_query_updated)  # (N, 2*num_pts)
+                        pred_for_loss = torch.cat([pred, pred_betas], dim=-1)          # (N, 4*num_pts)
+                    else:
+                        pred_for_loss = pred
+                    trans_reg_loss += self.head.loss_reg(pred_for_loss, normed_targets, weights, avg_factor=1.0)
                     if len(gt_labels) > 0:
                         trans_score = self.head.loss_cls(pred_scores, gt_labels, weights_labels, avg_factor=1.0)
                     else:
@@ -266,7 +270,12 @@ class Skeptic(BaseMapper):
                         track_query_backtrans).sigmoid()  # (num_prop, 2*num_pts)
                     pred_scores_backtrans = self.head.cls_branches[-1](track_query_backtrans)
                     prev_gt_pts = track_query_info[b_i]['track_query_gt_lines']
-                    back_trans_reg_loss += self.head.loss_reg(pred_backtrans, prev_gt_pts, weights, avg_factor=1.0)
+                    if self.head.use_laplace_uncertainty:
+                        pred_backtrans_betas = self.head.beta_branches[-1](track_query_backtrans)  # (N, 2*num_pts)
+                        pred_backtrans_for_loss = torch.cat([pred_backtrans, pred_backtrans_betas], dim=-1)
+                    else:
+                        pred_backtrans_for_loss = pred_backtrans
+                    back_trans_reg_loss += self.head.loss_reg(pred_backtrans_for_loss, prev_gt_pts, weights, avg_factor=1.0)
                     if len(gt_labels) > 0:
                         trans_score_bak = self.head.loss_cls(pred_scores_backtrans, gt_labels, weights_labels,
                                                              avg_factor=1.0)
@@ -733,6 +742,7 @@ class Skeptic(BaseMapper):
                              'scores': [],
                              'labels': [],
                              'props': [],
+                             'betas': None,
                              'token': token} for token in tokens]
 
         # Add the segmentation preds to the results to be saved
